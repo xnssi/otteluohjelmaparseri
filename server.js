@@ -13,7 +13,15 @@ app.get('/api/hello', (req, res) => {
 })
 
 app.get('/api/title', async (req, res) => {
-    const browser = await puppeteer.launch()
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--single-process'
+        ],
+    })
     const page = await browser.newPage()
     await page.goto('https://basket.fi')
     let title = await page.title()
