@@ -15,6 +15,7 @@ app.get('/api/hello', (req, res) => {
 app.get('/api/title', async (req, res) => {
     const browser = await puppeteer.launch({
         headless: true,
+        dumpio: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
