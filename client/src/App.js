@@ -1,21 +1,33 @@
 import React, { Component } from 'react'
-import Navbar from './components/Navbar'
 import axios from 'axios'
 import './App.css'
+import loading from './loading.svg'
+
+import Navbar from './components/Navbar'
+import Spacer from "./components/Spacer"
 
 class App extends Component {
   state = {
-    response: ""
+    title: "",
+    loading: false
   }
 
   componentDidMount() {
-    axios.get("/api/hello")
+    this.setState({ loading: true })
+
+    axios.get("/api/title")
       .then(res => {
-        this.setState({ response: res.data.message })
+        this.setState({ 
+          title: res.data.title, 
+          loading: false 
+        })
       })
       .catch(err => {
         console.log(err)
-        this.setState({ response: "Tapahtui virhe. Sori siitä" })
+        this.setState({ 
+          title: "Tapahtui virhe. Sori siitä", 
+          loading: false 
+        })
       })
   }
 
@@ -23,7 +35,9 @@ class App extends Component {
     return (
       <div className="App">
         <Navbar />
-        <p>{ this.state.response }</p>
+        <Spacer />
+        { this.state.loading && <img alt="Ladataan" src={loading} /> }
+        <p>{ this.state.title }</p>
       </div>
     )
   }
