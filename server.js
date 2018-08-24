@@ -6,13 +6,12 @@ const port = process.env.PORT || 5000
 
 const puppeteer = require('puppeteer')
 
-app.get('/api/hello', (req, res) => {
-    res.send({ 
-        message: 'Hello From Express' 
-    })
-})
-
-app.get('/api/title', async (req, res) => {
+/**
+ * Returns the HTML content of the nationwide leagues table at basket.fi/sarjat/sarjat/
+ */
+app.get('/api/leagues', async (req, res) => {
+    let alue = req.query.alue || null
+    
     const browser = await puppeteer.launch({
         headless: true,
         dumpio: true,
@@ -24,11 +23,13 @@ app.get('/api/title', async (req, res) => {
         ],
     })
     const page = await browser.newPage()
-    await page.goto('https://basket.fi')
-    let title = await page.title()
-    await browser.close();
+    await page.goto('https://basket.fi/basket/sarjat/')
+    const html = await page.evaluate(() => {
+        return document.querySelector(".mbt-content3").innerHTML
+    })
+    await browser.close()
 
-    await res.send({ title })
+    await res.send({ html })
 })
 
 if (process.env.NODE_ENV === 'production') {
