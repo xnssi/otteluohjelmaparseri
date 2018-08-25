@@ -17,7 +17,8 @@ class App extends Component {
     loading: false,
     loadingLeagues: false,
     teams: [],
-    selectedTeam: null
+    selectedTeam: null,
+    error: null
   }
 
   handleRegionChange = (selectedRegion) => {
@@ -50,7 +51,7 @@ class App extends Component {
       .catch(err => {
         console.log(err)
         this.setState({ 
-          title: "Tapahtui virhe. Sori siitä", 
+          error: true, 
           loading: false 
         })
       })
@@ -81,7 +82,7 @@ class App extends Component {
       .catch(err => {
         console.log(err)
         this.setState({ 
-          title: "Tapahtui virhe. Sori siitä", 
+          error: true, 
           loading: false 
         })
       })
@@ -89,6 +90,35 @@ class App extends Component {
 
   handleTeamChange = (selectedTeam) => {
     this.setState({ selectedTeam })
+    console.log(`/api/schedule?leagueId=${this.state.selectedLeague.value}&teamId=${selectedTeam.value}`)
+
+    axios.get(`/api/schedule?leagueId=${this.state.selectedLeague.value}&teamId=${selectedTeam.value}`)
+      .then(res => {
+        let parser = new DOMParser()
+        let doc = parser.parseFromString(res.data.html, "text/html")
+        let domRows = doc.querySelectorAll('tr.row1, tr.row2')
+        let rows = []
+        domRows.forEach(domRow => {
+          let domColumns = domRow.querySelectorAll('td>a')
+          let columns = []
+          domColumns.forEach(column => {
+            columns.push(column.textContent.trim())
+          })
+          rows.push(columns)
+        })
+        console.log(rows)
+
+        this.setState({
+          loading: false
+        })
+      })
+      .catch(err => {
+        console.log(err)
+        this.setState({ 
+          error: true, 
+          loading: false 
+        })
+      })
   }
 
   componentDidMount() {
@@ -118,7 +148,7 @@ class App extends Component {
       .catch(err => {
         console.log(err)
         this.setState({ 
-          title: "Tapahtui virhe. Sori siitä", 
+          error: true, 
           loading: false 
         })
       })
@@ -155,15 +185,18 @@ class App extends Component {
           { this.state.loading && 
             <div>
               <p>Lataan tietoja basket.fi:stä, odotathan hetken ☺️ </p>
-              <p>Jos tässä kestää ihan saamarin kauan, koita päivittää selain</p>
+              <p>Jos tässä kestää ihan saamarin kauan, koita päivittää selainikkuna</p>
               <img alt="Ladataan" src={loading} />
               <Spacer /> 
             </div>
           }
+          { !this.state.loading &&
+            <p><i style={{fontSize: "12px"}}>Valikkojen lataus voi kestää 5-30sek. Olethan kärsivällinen.</i></p>
+          }
           <div className="row">
             <div className="col-lg-4 col-12">
               { !this.state.loading &&
-                <div>
+                <div className="form-group">
                   <label>1. Valitse alue</label>
                   <Select
                     value={selectedRegion}
@@ -176,12 +209,12 @@ class App extends Component {
             <div className="col-lg-4 col-12">
               { this.state.loadingLeagues && 
                 <div>
-                  <Spacer /> 
+                  <p style={{fontSize: "13px"}}>Ladataan alueen sarjoja</p>
                   <img alt="Ladataan" src={loading} />
                 </div>
               }
               { !this.state.loadingLeagues && this.state.selectedRegion &&
-                <div>
+                <div className="form-group">
                   <label>2. Valitse sarja</label>
                   <Select
                     value={selectedLeague}
@@ -194,12 +227,12 @@ class App extends Component {
             <div className="col-lg-4 col-12">
               { this.state.loadingTeams && 
                 <div>
-                  <Spacer /> 
+                  <p style={{fontSize: "13px"}}>Ladataan joukkueita</p>
                   <img alt="Ladataan" src={loading} />
                 </div>
               }
               { !this.state.loadingTeams && this.state.selectedRegion && this.state.selectedLeague &&
-                <div>
+                <div className="form-group">
                   <label>3. Valitse joukkue</label>
                   <Select
                     value={selectedTeam}
@@ -210,6 +243,15 @@ class App extends Component {
               }
             </div>
           </div>
+          { this.state.error &&
+            <div className="row">
+              <div style={{color: "red", textAlign: "center"}} className="col-12">
+                <Spacer />
+                <h4>Tapahtui virhe. Sori siitä.</h4>
+                <p><i>Koita päivittää selainikkuna, tai tule huutamaan Twitterissä Anssille (@AnssiHautaviita).</i></p>
+              </div>
+            </div>
+          }
         </div>
       </div>
     )
