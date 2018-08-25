@@ -4,6 +4,8 @@ import './App.css'
 import loading from './loading.svg'
 
 import Select from 'react-select'
+import FileSaver from "file-saver"
+import moment from "moment"
 
 import Navbar from './components/Navbar'
 import Spacer from "./components/Spacer"
@@ -17,12 +19,14 @@ class App extends Component {
     loading: false,
     loadingLeagues: false,
     teams: [],
+    loadingCalendar: false,
+    calendarLoaded: false,
     selectedTeam: null,
     error: null
   }
 
   handleRegionChange = (selectedRegion) => {
-    this.setState({ selectedRegion, loadingLeagues: true, selectedLeague: null })
+    this.setState({ selectedRegion, loadingLeagues: true, selectedLeague: null, calendarLoaded: false })
 
     axios.get(`/api/leagues?selectedRegionId=${selectedRegion.value}`)
       .then(res => {
@@ -58,7 +62,7 @@ class App extends Component {
   }
 
   handleLeagueChange = (selectedLeague) => {
-    this.setState({ selectedLeague, loadingTeams: true, selectedTeam: null })
+    this.setState({ selectedLeague, loadingTeams: true, selectedTeam: null, calendarLoaded: false })
 
     axios.get(`/api/teams?selectedLeagueId=${selectedLeague.value}`)
       .then(res => {
@@ -89,8 +93,7 @@ class App extends Component {
   }
 
   handleTeamChange = (selectedTeam) => {
-    this.setState({ selectedTeam })
-    console.log(`/api/schedule?leagueId=${this.state.selectedLeague.value}&teamId=${selectedTeam.value}`)
+    this.setState({ selectedTeam, loadingCalendar: true, calendarLoaded: false })
 
     axios.get(`/api/schedule?leagueId=${this.state.selectedLeague.value}&teamId=${selectedTeam.value}`)
       .then(res => {
@@ -106,17 +109,40 @@ class App extends Component {
           })
           rows.push(columns)
         })
-        console.log(rows)
+
+        let icsContent = `BEGIN:VCALENDAR
+VERSION:2.0`
+
+        rows.forEach(row => {
+          let ajankohta = moment(row[0], "DD.MM.YYYY h:m")
+          let loppumisaika = moment(row[0], "DD.MM.YYYY h:m").add(2.5, "hours")
+
+          icsContent += `
+BEGIN:VEVENT
+DTSTART:${ajankohta.format("YYYYMMDDTHHmmss")}
+DTEND:${loppumisaika.format("YYYYMMDDTHHmmss")}
+SUMMARY:${row[1]} vs. ${row[3]}
+LOCATION:${row[4]}
+DESCRIPTION:Ottelu
+END:VEVENT`
+        })
+        
+        icsContent += `
+END:VCALENDAR`
+
+        let blob = new Blob([icsContent], {type: "text/plain;charset=utf-8"});
+        FileSaver.saveAs(blob, `Otteluohjelma - ${this.state.selectedTeam.label} - ${this.state.selectedLeague.label}.ics`);
 
         this.setState({
-          loading: false
+          loadingCalendar: false,
+          calendarLoaded: true
         })
       })
       .catch(err => {
         console.log(err)
         this.setState({ 
           error: true, 
-          loading: false 
+          loadingCalendar: false 
         })
       })
   }
@@ -159,7 +185,6 @@ class App extends Component {
 
     let optionsRegions = []
     let optionsBoxes = []
-    let optionsTeams = []
 
     regions.forEach(region => {
       optionsRegions.push({
@@ -184,7 +209,7 @@ class App extends Component {
           <Spacer />
           { this.state.loading && 
             <div>
-              <p>Lataan tietoja basket.fi:stä, odotathan hetken ☺️ </p>
+              <p>Lataan tietoja basket.fi:stä, odotathan hetken <span role="img" alt="Emoji">☺️</span> </p>
               <p>Jos tässä kestää ihan saamarin kauan, koita päivittää selainikkuna</p>
               <img alt="Ladataan" src={loading} />
               <Spacer /> 
@@ -243,6 +268,23 @@ class App extends Component {
               }
             </div>
           </div>
+          { this.state.calendarLoaded && 
+            <div>
+              <p>Otteluohjelma ladattu .ics-tiedostona.</p>
+              <p>Näin viet .ics-tiedoston esim.</p>
+              <p>
+                <a href="https://support.google.com/calendar/answer/37118?hl=fi" target="_blank">Google-kalenteriin »</a>
+                <br/><a href="https://support.office.com/fi-fi/article/kalenterin-tuominen-tai-tilaaminen-outlook-comissa-cff1429c-5af6-41ec-a5b4-74f2c278e98c?omkt=fi-FI&ui=fi-FI&rs=fi-FI&ad=FI" target="_blank">Outlookiin »</a>
+                <br/><a href="https://support.apple.com/fi-fi/guide/calendar/import-or-export-calendars-icl1023/mac" target="_blank">Macin kalenteriin »</a>
+              </p>
+            </div>
+          }
+          { this.state.loadingCalendar && 
+            <div>
+              <p style={{fontSize: "13px"}}>Generoidaan kalenteria</p>
+              <img alt="Ladataan" src={loading} />
+            </div>
+          }
           { this.state.error &&
             <div className="row">
               <div style={{color: "red", textAlign: "center"}} className="col-12">
