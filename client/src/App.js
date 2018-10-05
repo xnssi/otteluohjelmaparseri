@@ -218,7 +218,7 @@ END:VCALENDAR`
           { !this.state.loading &&
             <div>
               <p>Tällä työkalulla voit viedä valitsemasi sarjan tai joukkueen otteluohjelman kalenteriohjelmistoosi.</p>
-              <p>Huomioithan, että työkalu on beta-vaiheessa. Voit lähettää kehitysehdotuksia ja virheilmoituksia <a target="_blank" href="https://twitter.com/AnssiHautaviita">Twitterissä.</a></p>
+              <p><span style={{color: "red"}}>Huomioithan, että työkalu on beta-vaiheessa eikä toimi vielä oikein mobiililaitteilla</span>. Voit lähettää kehitysehdotuksia ja virheilmoituksia <a target="_blank" href="https://twitter.com/AnssiHautaviita">Twitterissä.</a></p>
               <p><i style={{fontSize: "12px"}}>Valikkojen lataus voi kestää 5-30sek. Olethan kärsivällinen.</i></p>
             </div>
           }
