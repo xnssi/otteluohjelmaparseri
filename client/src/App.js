@@ -22,7 +22,8 @@ class App extends Component {
     loadingCalendar: false,
     calendarLoaded: false,
     selectedTeam: null,
-    error: null
+    error: null,
+    etuliite: ""
   }
 
   handleRegionChange = (selectedRegion) => {
@@ -59,6 +60,10 @@ class App extends Component {
           loading: false 
         })
       })
+  }
+
+  handleEtuliiteChange = (event) => {
+    this.setState({ etuliite: event.target.value })
   }
 
   handleLeagueChange = (selectedLeague) => {
@@ -116,12 +121,13 @@ VERSION:2.0`
         rows.forEach(row => {
           let ajankohta = moment(row[0], "DD.MM.YYYY h:m")
           let loppumisaika = moment(row[0], "DD.MM.YYYY h:m").add(2.5, "hours")
+          let etuliite = this.state.etuliite == "" ? "" : `${this.state.etuliite}: `
 
           icsContent += `
 BEGIN:VEVENT
 DTSTART:${ajankohta.format("YYYYMMDDTHHmmss")}
 DTEND:${loppumisaika.format("YYYYMMDDTHHmmss")}
-SUMMARY:${row[1]} vs. ${row[3]}
+SUMMARY:${etuliite}${row[1]} vs. ${row[3]}
 LOCATION:${row[4]}
 DESCRIPTION:Ottelu
 END:VEVENT`
@@ -181,7 +187,7 @@ END:VCALENDAR`
   }
 
   render() {
-    const { selectedLeague, untrimmedBoxes, selectedRegion, regions, selectedTeam, teams } = this.state
+    const { selectedLeague, untrimmedBoxes, selectedRegion, regions, selectedTeam, teams, etuliite } = this.state
 
     let optionsRegions = []
     let optionsBoxes = []
@@ -223,7 +229,7 @@ END:VCALENDAR`
             </div>
           }
           <div className="row">
-            <div className="col-lg-4 col-12">
+            <div className="col-lg-3 col-12">
               { !this.state.loading &&
                 <div className="form-group">
                   <label>1. Valitse alue</label>
@@ -235,7 +241,7 @@ END:VCALENDAR`
                 </div>
               }
             </div>
-            <div className="col-lg-4 col-12">
+            <div className="col-lg-3 col-12">
               { this.state.loadingLeagues && 
                 <div>
                   <p style={{fontSize: "13px"}}>Ladataan alueen sarjoja</p>
@@ -253,7 +259,7 @@ END:VCALENDAR`
                 </div>
               }
             </div>
-            <div className="col-lg-4 col-12">
+            <div className="col-lg-3 col-12">
               { this.state.loadingTeams && 
                 <div>
                   <p style={{fontSize: "13px"}}>Ladataan joukkueita</p>
@@ -262,7 +268,16 @@ END:VCALENDAR`
               }
               { !this.state.loadingTeams && this.state.selectedRegion && this.state.selectedLeague &&
                 <div className="form-group">
-                  <label>3. Valitse joukkue</label>
+                  <label>3. Kalenterimerkinnän etuliite</label>
+                  <input type="text" value={etuliite} onChange={this.handleEtuliiteChange} class="form-control" placeholder="Esim. Korisliiga, N1D, LM5D" /> 
+                  <p className="small">Etuliite näkyy kalenteritapahtuman otsikon alussa, esim. syöttämällä "Korisliiga" otsikoksi tulee "Korisliiga: [kotijoukkue] vs [vierasjoukkue]". Voit jättää myös tyhjäksi.</p>
+                </div>
+              }
+            </div>
+            <div className="col-lg-3 col-12">
+              { !this.state.loadingTeams && this.state.selectedRegion && this.state.selectedLeague &&
+                <div className="form-group">
+                  <label>4. Valitse joukkue</label>
                   <Select
                     value={selectedTeam}
                     onChange={this.handleTeamChange}
