@@ -105,31 +105,42 @@ class App extends Component {
       .then(res => {
         let parser = new DOMParser()
         let doc = parser.parseFromString(res.data.html, "text/html")
-        let domRows = doc.querySelectorAll('tr.row1, tr.row2')
-        let rows = []
-        domRows.forEach(domRow => {
-          let domColumns = domRow.querySelectorAll('td>a')
-          let columns = []
-          domColumns.forEach(column => {
-            columns.push(column.textContent.trim())
+        let domCells = doc.querySelectorAll('a')
+        let domCellsArray = Array.from(domCells)
+
+        let domRows = []
+        let chunk
+
+        while (domCellsArray.length > 0) {
+          chunk = domCellsArray.splice(0, 5)
+          domRows.push(chunk)
+        }
+
+        let filteredMatchDetails = []
+
+        domRows.forEach(d => {
+          filteredMatchDetails.push({
+            date: d[0].innerHTML,
+            homeTeam: d[1].innerHTML,
+            awayTeam: d[3].innerHTML,
+            venue: d[4].innerHTML
           })
-          rows.push(columns)
         })
 
         let icsContent = `BEGIN:VCALENDAR
 VERSION:2.0`
 
-        rows.forEach(row => {
-          let ajankohta = moment(row[0], "DD.MM.YYYY h:m")
-          let loppumisaika = moment(row[0], "DD.MM.YYYY h:m").add(2.5, "hours")
+        filteredMatchDetails.forEach(row => {
+          let ajankohta = moment(row.date, "DD.MM.YYYY h:m")
+          let loppumisaika = moment(row.date, "DD.MM.YYYY h:m").add(2.5, "hours")
           let etuliite = this.state.etuliite == "" ? "" : `${this.state.etuliite}: `
 
           icsContent += `
 BEGIN:VEVENT
 DTSTART:${ajankohta.format("YYYYMMDDTHHmmss")}
 DTEND:${loppumisaika.format("YYYYMMDDTHHmmss")}
-SUMMARY:${etuliite}${row[1]} vs. ${row[3]}
-LOCATION:${row[4]}
+SUMMARY:${etuliite}${row.homeTeam} vs. ${row.awayTeam}
+LOCATION:${row.venue}
 DESCRIPTION:Ottelu
 END:VEVENT`
         })
@@ -217,7 +228,7 @@ END:VCALENDAR`
           { this.state.loading && 
             <div>
               <p>Lataan tietoja basket.fi:stä, odotathan hetken <span role="img" alt="Emoji">☺️</span> </p>
-              <p>Jos tässä kestää ihan saamarin kauan, koita päivittää selainikkuna</p>
+              <p>Latauksessa voi kestää jopa 30-45 sekuntia, koska sovellus hyödyntää palvelimella pyörivää, hitaasti käynnistyvää virtuaaliselainta.</p>
               <img alt="Ladataan" src={loading} />
               <Spacer /> 
             </div>
@@ -225,8 +236,8 @@ END:VCALENDAR`
           { !this.state.loading &&
             <div>
               <p>Tällä työkalulla voit viedä valitsemasi sarjan tai joukkueen otteluohjelman kalenteriohjelmistoosi.</p>
-              <p><span style={{color: "red"}}>Huomioithan, että työkalu on beta-vaiheessa eikä toimi vielä oikein mobiililaitteilla</span>. Voit lähettää kehitysehdotuksia ja virheilmoituksia <a target="_blank" href="https://twitter.com/AnssiHautaviita">Twitterissä.</a></p>
-              <p><i style={{fontSize: "12px"}}>Valikkojen lataus voi kestää 5-30sek. Olethan kärsivällinen.</i></p>
+              <p>Työkalu generoi <strong>.ics-muotoisen kalenteritiedoston</strong>, jonka voi importata esimerkiksi Google Calendariin, Outlookiin tai Macin kalenteriin. <strong>Huomioi, että mobiililaitteiden kalenterisovellukset eivät yleisesti tue .ics-tiedostoja – kalenteritiedoston importtaaminen tulee suorittaa tietokoneella.</strong></p>
+              <p><i style={{fontSize: "12px"}}>Valikkojen lataus voi kestää 5-30sek.</i></p>
             </div>
           }
           <div className="row">
