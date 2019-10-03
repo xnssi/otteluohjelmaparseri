@@ -54,14 +54,14 @@ app.get('/api/schedule', async (req, res) => {
     await page.select('[id="2-303-filter-team"]', teamId)
     await page.waitFor(1000)
     let html = await page.evaluate(() => {
-        return document.querySelector(".mbt-schedule-widget").innerHTML
+        return document.querySelector("#mbt-v2-schedule-table tbody").innerHTML
     })
     while (await page.$("[id='2-303-page-next']") !== null) {
         await page.waitFor(1000)
         await page.click("[id='2-303-page-next']")
         await page.waitFor(1000)
         html += await page.evaluate(() => {
-            return document.querySelector(".mbt-schedule-widget").innerHTML
+            return document.querySelector("#mbt-v2-schedule-table tbody").innerHTML
         })
     }
     
@@ -124,12 +124,10 @@ app.get('/api/teams', async (req, res) => {
     await res.send({ teams })
 })
 
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'client/build')))
+app.use(express.static(path.join(__dirname, 'client/build')))
 
-    app.get('*', function(req, res) {
-        res.sendFile(path.join(__dirname, 'client/build', 'index.html'))
-    })
-}
+app.get('*', function(req, res) {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'))
+})
 
 app.listen(port, () => console.log(`Listening on port ${port}`))
