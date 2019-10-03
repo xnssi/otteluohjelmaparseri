@@ -107,12 +107,19 @@ class App extends Component {
         let doc = parser.parseFromString(res.data.html, "text/html")
         let domCells = doc.querySelectorAll('a')
         let domCellsArray = Array.from(domCells)
+        let domCellsArrayWithoutEmpties = []
+        
+        domCellsArray.forEach(d => {
+          if (d.id) domCellsArrayWithoutEmpties.push(d)
+        })
+
+        console.log(domCellsArrayWithoutEmpties, domCellsArray)
 
         let domRows = []
         let chunk
 
-        while (domCellsArray.length > 0) {
-          chunk = domCellsArray.splice(0, 5)
+        while (domCellsArrayWithoutEmpties.length > 0) {
+          chunk = domCellsArrayWithoutEmpties.splice(0, 5)
           domRows.push(chunk)
         }
 

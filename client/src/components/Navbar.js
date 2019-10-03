@@ -5,7 +5,7 @@ class Navbar extends Component {
         return (
             <nav className="navbar navbar-expand-lg navbar-light bg-light">
                 <div className="container">
-                    <span className="navbar-brand" href="/">Basket.fi otteluohjelmaparseri</span>
+                    <span className="navbar-brand" href="/">Basket.fi kalenterigeneraattori</span>
                 </div>
             </nav>
         )
