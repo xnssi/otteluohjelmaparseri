@@ -104,45 +104,57 @@ class App extends Component {
     axios.get(`/api/schedule?leagueId=${this.state.selectedLeague.value}&teamId=${selectedTeam.value}`)
       .then(res => {
         let parser = new DOMParser()
-        let doc = parser.parseFromString(res.data.html, "text/html")
-        let domCells = doc.querySelectorAll('a')
-        let domCellsArray = Array.from(domCells)
-        let domCellsArrayWithoutEmpties = []
-        
-        domCellsArray.forEach(d => {
-          if (d.id) domCellsArrayWithoutEmpties.push(d)
-        })
-
-        console.log(domCellsArrayWithoutEmpties, domCellsArray)
-
-        let domRows = []
-        let chunk
-
-        while (domCellsArrayWithoutEmpties.length > 0) {
-          chunk = domCellsArrayWithoutEmpties.splice(0, 5)
-          domRows.push(chunk)
-        }
+        let doc = parser.parseFromString("<table><tbody>" + res.data.html + "</tbody></table>", "text/html")
+        let domRows = doc.querySelectorAll("tr")
 
         let filteredMatchDetails = []
 
         domRows.forEach(d => {
-          filteredMatchDetails.push({
-            date: d[0].innerHTML,
-            homeTeam: d[1].innerHTML,
-            awayTeam: d[3].innerHTML,
-            venue: d[4].innerHTML
-          })
+          try {
+            let ds = d.querySelector('td[data-th="Pvm ja aika"]').innerText.replace(/(\t|\r\n|\n|\r)/gm, "").split("if (typeof")[0].trim()
+            let dateStart = ds
+            let dateEnd = ""
+            if (ds.includes(" - ")) {
+              dateStart = ds.split(" - ")[0]
+              dateEnd = ds.split(" - ")[1]
+            }
+
+            let venue = d.querySelector('td[data-th="Pelipaikka"]').innerText.replace(/(\t|\r\n|\n|\r)/gm, "").split("if (typeof")[0].trim()
+            if (!venue) venue = "Tarkentuu myöhemmin"
+
+            filteredMatchDetails.push({
+              dateStart,
+              dateEnd,
+              venue,
+              homeTeam: d.querySelector('td[data-th="Kotijoukkue"]').innerText.replace(/(\t|\r\n|\n|\r)/gm, "").split("if (typeof")[0].trim(),
+              awayTeam: d.querySelector('td[data-th="Vierasjoukkue"]').innerText.replace(/(\t|\r\n|\n|\r)/gm, "").split("if (typeof")[0].trim(),
+            })
+          } catch(err) {
+            alert("Tapahtui JavaScript-virhe. Jos tämä toistuu, Basket.fi:n datassa on jotain häröä mitä koodi ei pysty parsimaan")
+          }
         })
+
+        console.log(filteredMatchDetails)
 
         let icsContent = `BEGIN:VCALENDAR
 VERSION:2.0`
 
         filteredMatchDetails.forEach(row => {
-          let ajankohta = moment(row.date, "DD.MM.YYYY h:m")
-          let loppumisaika = moment(row.date, "DD.MM.YYYY h:m").add(2.5, "hours")
+          let ajankohta = moment(row.dateStart, "DD.MM.YYYY h:m")
+          let loppumisaika = moment(row.dateStart, "DD.MM.YYYY h:m").add(2.5, "hours")
           let etuliite = this.state.etuliite == "" ? "" : `${this.state.etuliite}: `
-
-          icsContent += `
+          
+          if (row.dateEnd) {
+            icsContent += `
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:${moment(row.dateStart, "DD.MM.YYYY").format("YYYYMMDD")}
+DTEND;VALUE=DATE:${moment(row.dateEnd, "DD.MM.YYYY").add("1", "day").format("YYYYMMDD")}
+SUMMARY:${etuliite}${row.homeTeam} vs. ${row.awayTeam}
+LOCATION:${row.venue}
+DESCRIPTION:Ottelu
+END:VEVENT`
+          } else {
+            icsContent += `
 BEGIN:VEVENT
 DTSTART:${ajankohta.format("YYYYMMDDTHHmmss")}
 DTEND:${loppumisaika.format("YYYYMMDDTHHmmss")}
@@ -150,6 +162,7 @@ SUMMARY:${etuliite}${row.homeTeam} vs. ${row.awayTeam}
 LOCATION:${row.venue}
 DESCRIPTION:Ottelu
 END:VEVENT`
+          }
         })
         
         icsContent += `

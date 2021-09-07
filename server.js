@@ -50,10 +50,13 @@ app.get('/api/schedule', async (req, res) => {
     })
     const page = await browser.newPage()
     await page.goto(`https://www.basket.fi/basket/sarjat/ohjelma-ja-tulokset/?league_id=${leagueId}`)
-    await page.waitFor(1000)
+    await page.waitFor(3000)
     await page.select('[id="2-303-filter-team"]', teamId)
-    await page.waitFor(1000)
+    await page.waitFor(3000)
     let html = await page.evaluate(() => {
+        if (!document.querySelector("#mbt-v2-schedule-table tbody")) return ""
+        if (!document.querySelector("#mbt-v2-schedule-table tbody").innerHTML) return ""
+
         return document.querySelector("#mbt-v2-schedule-table tbody").innerHTML
     })
     while (await page.$("[id='2-303-page-next']") !== null) {
