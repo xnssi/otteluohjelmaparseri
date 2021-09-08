@@ -142,7 +142,7 @@ VERSION:2.0`
         filteredMatchDetails.forEach(row => {
           let ajankohta = moment(row.dateStart, "DD.MM.YYYY h:m")
           let loppumisaika = moment(row.dateStart, "DD.MM.YYYY h:m").add(2.5, "hours")
-          let etuliite = this.state.etuliite == "" ? "" : `${this.state.etuliite} `
+          let etuliite = this.state.etuliite == "" ? "" : `${this.state.etuliite} - `
           etuliite = etuliite.replace(":", "")
           
           if (row.dateEnd) {
